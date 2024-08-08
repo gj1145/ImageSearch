@@ -10,9 +10,9 @@ client = OpenSearch(
     ssl_show_warn = False,
     http_auth=('admin', '114514Aa@')
 )
-index = 'image-search'
+index = 'image-search-sentence-transformers'
 
-text_model = SentenceTransformer('sentence-transformers/clip-ViT-B-32-multilingual-v1')
+text_model = SentenceTransformer('models/clip-ViT-B-32-multilingual-v1')
 
 def ann_search(query):
     query_emb = text_model.encode(query)
@@ -33,3 +33,4 @@ def ann_search(query):
 if __name__ == "__main__":
     hits = ann_search('你好')
     print(hits)
+

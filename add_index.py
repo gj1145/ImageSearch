@@ -1,13 +1,15 @@
 import os
 import base64
+import torch
 from io import BytesIO
 from sentence_transformers import SentenceTransformer
 from PIL import Image
 from PIL.ImageSequence import all_frames
 from opensearchpy import OpenSearch
+from tqdm import tqdm
 
-img_path = './data/image' #图片路径
-img_model = SentenceTransformer('clip-ViT-B-32')
+img_path = '/root/autodl-tmp/wxdata/emoji_data' #图片路径
+img_model = SentenceTransformer('/models/clip-ViT-B-32')
 
 def get_pic_base64(filename, is_gif=False):
     img = Image.open(filename)  # 访问图片路径
@@ -38,7 +40,7 @@ def get_pic(filename, is_gif=False):
         # 计算中间帧的索引
         middle_frame_index = total_frames // 2
         # 读取中间帧
-        img = img.seek(middle_frame_index)
+        img.seek(middle_frame_index)
         img = img.convert('RGB')
     return img
 
@@ -51,18 +53,23 @@ client = OpenSearch(
     ssl_show_warn = False,
     http_auth=('admin', '114514Aa@')
 )
-index = 'image-search'
+index = 'image-search-sentence-transformers'
 
 #添加索引
+cnt = 0
+if os.path.exists('./cnt.pth'):
+    cnt = torch.load('./cnt.pth')
+    
 for root, dirs, files in os.walk(img_path, topdown=False):
-    for name in files:
-        file_path = os.path.join(root, name)
-
-        #img = get_pic_base64(file_path, file_path.endswith('gif'))
-        img = get_pic(file_path, file_path.endswith('gif'))
-
-        img_vector = img_model.encode(img)
-        client.index(index=index, body={
-            "name": name,
-            "img_vector": img_vector,
-        })
+    for pos, name in enumerate(tqdm(files)):
+        if pos >= cnt:
+            file_path = os.path.join(root, name)
+            #img = get_pic_base64(file_path, file_path.endswith('gif'))
+            img = get_pic(file_path, file_path.endswith('gif'))
+            img_vector = img_model.encode(img)
+            client.index(index=index, body={
+                "name": name,
+                "img_vector": img_vector,
+            })
+            cnt += 1
+            torch.save(cnt, './cnt.pth')

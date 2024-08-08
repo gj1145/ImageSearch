@@ -11,7 +11,7 @@ client = OpenSearch(
 )
 
 #创建索引
-index = 'image-search'
+index = 'image-search-sentence-transformers'
 index_body = {
   "settings": {
     "index": {
